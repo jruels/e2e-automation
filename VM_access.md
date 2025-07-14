@@ -9,7 +9,7 @@
 | MYKHAYLO LASHCHYK      | WSAUTO25-28 | TEKwsauto25!               |                                               |
 | LORENZO MARCELO        | WSAUTO25-29 | TEKwsauto25!               |                                               |
 | SRIDHARRAO MUTHINENI   | WSAUTO25-30 | TEKwsauto25!               |                                               |
-| ARJUN NEGI             | WSAUTO25-31 | TEKwsauto25!               |                                               |
+| ANIL                   | WSAUTO25-31 | TEKwsauto25!               |                                               |
 | KHOI NGUYEN NGUYEN     | WSAUTO25-32 | TEKwsauto25!               |                                               |
 | CHEZHIYAN PANDYAN      | WSAUTO25-33 | TEKwsauto25!               |                                               |
 | LUKE BEARD             | WSAUTO25-34 | TEKwsauto25!               |                                               |
