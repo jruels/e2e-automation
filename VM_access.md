@@ -12,7 +12,7 @@
 | ARJUN NEGI             | WSAUTO25-31 | TEKwsauto25!               |                                               |
 | KHOI NGUYEN NGUYEN     | WSAUTO25-32 | TEKwsauto25!               |                                               |
 | CHEZHIYAN PANDYAN      | WSAUTO25-33 | TEKwsauto25!               |                                               |
-| ANIL KUMAR PULAKANTI   | WSAUTO25-34 | TEKwsauto25!               |                                               |
+| LUKE BEARD             | WSAUTO25-34 | TEKwsauto25!               |                                               |
 | SALMAN QASIM           | WSAUTO25-35 | TEKwsauto25!               |                                               |
 | SNEH SUNIL             | WSAUTO25-36 | TEKwsauto25!               |                                               |
 | Instructor             | WSAUTO25-37 | TEKwsauto25!               |                                               |
