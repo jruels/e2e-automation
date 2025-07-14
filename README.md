@@ -10,5 +10,5 @@ This site includes the information for the End-to-End Automation class.
 
 ### Day 1   
 Lab 0: [Setup VM](labs/setup.md)   
-Lab 1: [Terraform - Create an instance](labs/tf-first-instance)    
-Lab 2: [Variables and output](labs/tf-variables-and-output)   
+Lab 1: [Terraform - Create an instance](labs/tf-first-instance/index.md)    
+Lab 2: [Variables and output](labs/tf-variables-and-output/index.md)   
