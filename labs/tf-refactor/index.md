@@ -232,3 +232,287 @@ terraform destroy
 
 ## Congrats!
 
+## Workspaces
+
+As an alternative to using directories to separate environments, Terraform workspaces allow you to manage multiple environments using the same configuration files. Each workspace maintains its own state file, providing isolation between environments without duplicating code.
+
+Workspaces are ideal when your environments have similar configurations but different variable values. This approach reduces code duplication and makes it easier to maintain consistency across environments.
+
+### Understanding Terraform Workspaces
+
+Terraform workspaces allow you to use the same configuration for multiple environments by maintaining separate state files. By default, Terraform uses a workspace called "default". You can create additional workspaces for different environments like dev, staging, and prod.
+
+### Clean up from previous section
+
+Before starting with workspaces, let's clean up the directory structure from the previous section and start fresh:
+
+```sh
+cd ..
+rm -rf prod dev
+```
+
+### Setting up workspace-based configuration
+
+Now let's modify our existing configuration to work with workspaces. We'll use the `terraform.workspace` variable to differentiate between environments.
+
+1. **Add the required providers block** to your existing `main.tf` file:
+
+Add the following `terraform` block at the top of your `main.tf` file:
+
+```hcl
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 4.0.0"
+    }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.1.0"
+    }
+  }
+}
+```
+
+2. **Modify the S3 bucket resource** to use workspace-aware naming:
+
+Update the bucket name to include the workspace prefix. Change this line:
+
+```hcl
+bucket = "${var.prefix}-${random_pet.petname.id}"
+```
+
+To:
+
+```hcl
+bucket = "${terraform.workspace}-${var.prefix}-${random_pet.petname.id}"
+```
+
+3. **Update all resource references** to use `aws_s3_bucket.bucket.id` instead of hardcoded bucket names:
+
+Find all occurrences of:
+```hcl
+bucket = "${var.prefix}-${random_pet.petname.id}"
+```
+
+And replace them with:
+```hcl
+bucket = aws_s3_bucket.bucket.id
+```
+
+4. **Update the S3 bucket policy** to use the workspace-aware bucket name:
+
+In the `aws_s3_bucket_policy` resource, update the Resource ARN to:
+
+```hcl
+"Resource": [
+    "arn:aws:s3:::${terraform.workspace}-${var.prefix}-${random_pet.petname.id}/*"
+]
+```
+
+### Create supporting files
+
+1. Create a `variables.tf` file:
+
+```hcl
+variable "region" {
+  description = "AWS region"
+  type        = string
+  default     = "us-west-1"
+}
+
+variable "prefix" {
+  description = "Prefix for bucket name"
+  type        = string
+  default     = "webapp"
+}
+```
+
+2. Create an `outputs.tf` file:
+
+```hcl
+output "website_endpoint" {
+  description = "Website endpoint for the S3 bucket"
+  value       = "http://${aws_s3_bucket.bucket.bucket}.s3-website-${var.region}.amazonaws.com"
+}
+
+output "bucket_name" {
+  description = "Name of the S3 bucket"
+  value       = aws_s3_bucket.bucket.id
+}
+
+output "workspace" {
+  description = "Current workspace"
+  value       = terraform.workspace
+}
+```
+
+3. Create a `terraform.tfvars` file:
+
+```hcl
+region = "us-west-1"
+prefix = "webapp"
+```
+
+4. Create the assets directory and index.html file:
+
+```sh
+mkdir -p assets
+echo '<h1>Hello from Terraform Workspace!</h1>' > assets/index.html
+```
+
+### Working with Workspaces
+
+#### Initialize Terraform
+
+First, initialize your Terraform configuration:
+
+```sh
+terraform init
+```
+
+#### List workspaces
+
+View available workspaces:
+
+```sh
+terraform workspace list
+```
+
+You should see only the "default" workspace initially.
+
+#### Create and switch to dev workspace
+
+```sh
+terraform workspace new dev
+```
+
+This creates a new workspace called "dev" and switches to it automatically.
+
+#### Deploy to dev workspace
+
+```sh
+terraform plan
+terraform apply
+```
+
+Note that the bucket name will include "dev" as the workspace prefix.
+
+#### Create and deploy to prod workspace
+
+```sh
+terraform workspace new prod
+terraform plan
+terraform apply
+```
+
+#### Switch between workspaces
+
+To switch to an existing workspace:
+
+```sh
+terraform workspace select dev
+```
+
+To see which workspace you're currently in:
+
+```sh
+terraform workspace show
+```
+
+### Workspace-specific configurations
+
+You can also create workspace-specific variable files for different configurations:
+
+1. Create `dev.tfvars`:
+
+```hcl
+region = "us-west-1"
+prefix = "dev-webapp"
+```
+
+2. Create `prod.tfvars`:
+
+```hcl
+region = "us-west-1"
+prefix = "prod-webapp"
+```
+
+3. Apply with workspace-specific variables:
+
+```sh
+terraform workspace select dev
+terraform apply -var-file="dev.tfvars"
+
+terraform workspace select prod
+terraform apply -var-file="prod.tfvars"
+```
+
+### State file location
+
+Terraform stores workspace state files in the `terraform.tfstate.d` directory:
+
+```
+.
+├── terraform.tfstate.d/
+│   ├── dev/
+│   │   └── terraform.tfstate
+│   └── prod/
+│       └── terraform.tfstate
+├── main.tf
+├── variables.tf
+├── outputs.tf
+├── terraform.tfvars
+└── assets/
+    └── index.html
+```
+
+### Benefits of Workspaces
+
+- **Reduced code duplication**: Same configuration files for all environments
+- **Easier maintenance**: Changes to infrastructure code apply to all environments
+- **Simplified directory structure**: No need for separate directories
+- **Built-in workspace isolation**: Each workspace has its own state file
+
+### Limitations of Workspaces
+
+- **Shared configuration**: All environments must use the same configuration
+- **Limited environment differences**: Not suitable for environments with significantly different resource requirements
+- **State file management**: All state files are stored in the same location
+
+### Cleanup
+
+To clean up resources from both workspaces:
+
+```sh
+terraform workspace select dev
+terraform destroy
+
+terraform workspace select prod
+terraform destroy
+```
+
+To delete empty workspaces:
+
+```sh
+terraform workspace select default
+terraform workspace delete dev
+terraform workspace delete prod
+```
+
+## Choosing Between Directories and Workspaces
+
+### Use Directories when:
+- Environments have significantly different configurations
+- You need to test changes in one environment before applying to others
+- You want complete isolation between environments
+- Different teams manage different environments
+
+### Use Workspaces when:
+- Environments have similar configurations with different variable values
+- You want to reduce code duplication
+- You need quick switching between environments
+- Environments are managed by the same team
+
+## Congrats!
+
