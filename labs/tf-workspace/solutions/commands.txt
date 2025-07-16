@@ -1,0 +1,84 @@
+# Terraform Workspace Solution Commands
+
+## Basic Setup
+# Initialize Terraform
+terraform init
+
+# List available workspaces (should show only 'default' initially)
+terraform workspace list
+
+## Deploy to Dev Environment
+# Create and switch to dev workspace
+terraform workspace new dev
+
+# Verify you're in the dev workspace
+terraform workspace show
+
+# Plan and apply to dev environment
+terraform plan
+terraform apply
+
+# Alternative: Apply with dev-specific variables
+terraform apply -var-file="dev.tfvars"
+
+## Deploy to Prod Environment
+# Create and switch to prod workspace
+terraform workspace new prod
+
+# Verify you're in the prod workspace
+terraform workspace show
+
+# Plan and apply to prod environment
+terraform plan
+terraform apply
+
+# Alternative: Apply with prod-specific variables
+terraform apply -var-file="prod.tfvars"
+
+## Workspace Management
+# List all workspaces (* indicates current workspace)
+terraform workspace list
+
+# Switch between workspaces
+terraform workspace select dev
+terraform workspace select prod
+
+# Show current workspace
+terraform workspace show
+
+## Cleanup
+# Destroy dev environment
+terraform workspace select dev
+terraform destroy
+
+# Destroy prod environment
+terraform workspace select prod
+terraform destroy
+
+# Delete empty workspaces (must be on default workspace)
+terraform workspace select default
+terraform workspace delete dev
+terraform workspace delete prod
+
+## Quick Demo Commands (for instructor)
+# Full setup and deployment
+terraform init
+terraform workspace new dev
+terraform apply -auto-approve
+terraform workspace new prod
+terraform apply -auto-approve
+
+# Show both environments
+terraform workspace select dev
+terraform show
+terraform workspace select prod
+terraform show
+
+# Cleanup
+terraform workspace select dev
+terraform destroy -auto-approve
+terraform workspace select prod
+terraform destroy -auto-approve
+terraform workspace select default
+terraform workspace delete dev
+terraform workspace delete prod
