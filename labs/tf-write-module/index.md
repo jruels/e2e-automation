@@ -36,8 +36,8 @@ You also want to make sure and add the following to your ignore list. If you are
 
 1. In **Visual Studio Code**, open the working directory created in the previous lab (`YYYYMMDD/terraform`).
 2. Right-click in the **Explorer** pane and select **New Folder**.
-3. Name the folder `tf-lab5`.
-4. Right click `tf-lab5` and click **Open in Integrated Terminal**.
+3. Name the folder `tf-lab9`.
+4. Right click `tf-lab9` and click **Open in Integrated Terminal**.
 
 Clone the GitHub repository.
 ```sh
@@ -53,7 +53,7 @@ Ensure that Terraform has downloaded all the necessary providers and modules by 
 
 In this lab, you will create a local submodule within your existing configuration that uses the s3 bucket resource from the AWS provider.
 
-Inside your `tf-lab5/learn-terraform-modules-create` folder, create a sub-folder called `modules`. In the new `modules` folder create a sub-folder named `aws-s3-static-website-bucket`. 
+Inside your `tf-lab9/learn-terraform-modules-create` folder, create a sub-folder called `modules`. In the new `modules` folder create a sub-folder named `aws-s3-static-website-bucket`. 
 
 
 
