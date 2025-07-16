@@ -24,7 +24,6 @@ Lab 9: [Write your own module](labs/tf-write-module/index.md)
 Lab 10: [Refactor monolithic codebase](labs/tf-refactor/index.md)
 
 ### Day 3 
-Lab 11: [Access CloudShell](labs/lab-setup)   
-Lab 12: [Create Cluster](labs/eks)   
-Lab 13: [Deploy a simple app](labs/pods)   
-Lab 14: [Deploy a multi-tier app](labs/deployments)   
+Lab 11: [Create Cluster](labs/eks)   
+Lab 12: [Deploy a simple app](labs/pods)   
+Lab 13: [Deploy a multi-tier app](labs/deployments)   
