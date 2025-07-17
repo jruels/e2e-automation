@@ -119,20 +119,30 @@ spec:
 
 Inside the container that mounts a secret volume, the secret keys appear as files and the secret values are base-64 decoded and stored inside these files. This is the result of commands executed inside the container from the example above: 
 
+Log into the container:
+```
+kubectl exec -it mypod -- bash 
+
+```
 List secrets 
 ```
-kubectl exec -it mypod -- ls /etc/foo
+ls /etc/foo
 ```
 
 Output username 
 ```
-kubectl exec -it mypod -- cat /etc/foo/username
+cat /etc/foo/username
 ```
 
 Output password
 ```
-kubectl exec -it mypod -- cat /etc/foo/password
+cat /etc/foo/password
 ```		
+
+Exit the container: 
+```
+exit
+```
 
 
 ### Secrets as Environment Variables 
