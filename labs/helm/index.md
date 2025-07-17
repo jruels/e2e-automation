@@ -162,14 +162,10 @@ spec:
 We now need to update `demo-app/templates/deployment.yaml` and remove the `liveness` and `readiness` probe sections. 
 ```yaml
 <snip..>
-          livenessProbe:
-            httpGet:
-              path: /
-              port: http
+        livenessProbe:
+            {{- toYaml .Values.livenessProbe | nindent 12 }}
           readinessProbe:
-            httpGet:
-              path: /
-              port: http
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
 <..snip>
 ```
 
