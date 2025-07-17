@@ -1,26 +1,28 @@
-apiVersion: apps/v1 # for versions before 1.9.0 use apps/v1beta2
+apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: redis-master
+  name: redis-leader
   labels:
     app: redis
+    role: leader
+    tier: backend
 spec:
+  replicas: 1
   selector:
     matchLabels:
       app: redis
-      role: master
+      role: leader
       tier: backend
-  replicas: 1
   template:
     metadata:
       labels:
         app: redis
-        role: master
+        role: leader
         tier: backend
     spec:
       containers:
-      - name: master
-        image: k8s.gcr.io/redis:e2e  # or just image: redis
+      - name: leader
+        image: "docker.io/redis:6.0.5"
         resources:
           requests:
             cpu: 100m
