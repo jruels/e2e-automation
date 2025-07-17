@@ -45,7 +45,7 @@ spec:
               topologyKey: "kubernetes.io/hostname"
       containers:
       - name: redis
-      - image: redis
+        image: redis
         ports:
         - name: redis-port
           containerPort: 6379
