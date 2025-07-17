@@ -12,7 +12,7 @@ You should see output showing a Helm 3 version.
 
 Sample output:
 ```
-Version:"v3.7.1"
+Version:"v3.18.1"
 ```
 
 If you do not have Helm installed, install it with:

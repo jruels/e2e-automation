@@ -2,13 +2,8 @@
 
 ### Part 1: Initial Setup and Configuration
 
-#### Refresh AWS Access Keys
-- Return to the AWS access portal
-- Refresh the page
-- Copy the updated Access keys
-
 #### Fork the Repository
-- Go to the repository page
+- Go to the lab repository page
 - Click the "Fork" button in the top right
 - Select your account as the destination
 
