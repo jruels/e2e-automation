@@ -27,3 +27,8 @@ Lab 10: [Refactor monolithic codebase](labs/tf-refactor/index.md)
 Lab 11: [Create Cluster](labs/eks/index.md)   
 Lab 12: [Deploy a simple app](labs/pods/index.md)   
 Lab 13: [Deploy a multi-tier app](labs/deployments/index.md)   
+
+### Day 4 
+Lab 14: [Scheduling](labs/scheduling/index.md)   
+Lab 15: [Helm](labs/helm/index.md)   
+Lab 16: [GitHub Actions Terraform](labs/gh-actions/index.md)
