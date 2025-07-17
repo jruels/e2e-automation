@@ -30,5 +30,7 @@ Lab 13: [Deploy a multi-tier app](labs/deployments/index.md)
 
 ### Day 4 
 Lab 14: [Scheduling](labs/scheduling/index.md)   
-Lab 15: [Helm](labs/helm/index.md)   
-Lab 16: [GitHub Actions Terraform](labs/gh-actions/index.md)
+Lab 15: [ConfigMap](labs/configmap/index.md)   
+Lab 16: [Secrets](labs/secrets/index.md)   
+Lab 17: [Helm](labs/helm/index.md)   
+Lab 18: [GitHub Actions Terraform](labs/gh-actions/index.md)
