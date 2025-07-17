@@ -1,7 +1,7 @@
-# Deploy multi-tier application
-This lab shows you how to build, deploy and manage a simple, multi-tier web application using Kubernetes. 
+# Deploy a multi-tier application
+This lab shows you how to build, deploy, and manage a simple, multi-tier web application using Kubernetes. 
 
-We will be deploying the guestbook demo application which is made up of Redis leader, Redis follower, and guestbook frontend.  After successfully deploying we will update the application and then rollback to the previous version.
+We will be deploying the guestbook demo application, which is made up of a Redis leader, a Redis follower, and a guestbook frontend.  After successfully deploying, we will update the application and then roll back to the previous version.
 
 ## Start up Redis Leader 
 The guestbook application uses Redis to store its data. It writes data to a Redis leader instance and reads data from multiple Redis follower instances.
