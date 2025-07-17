@@ -82,6 +82,14 @@ Well, they aren't being scheduled to any nodes.  Do some investigation and deter
 
 Once you have figured out why the Pods are not being scheduled resolve the issue and redeploy to 2 of your nodes.   
 
+If you get stuck, the solution is to apply the required label to at least one node.
+
+```
+ kubectl label nodes <NODE-NAME-1> env=dev
+ kubectl label nodes <NODE-NAME-2> env=dev
+ kubectl label nodes <NODE-NAME-1> team=engineering-project1
+ ```
+
 After confirming the Pods have been deployed successfully, apply the `preferred` label, to one of the nodes, and then delete the Pod replica running on the other node and you will see it get scheduled on to the node that now has 2 labels applied. 
 
 Now if we check we can see that the Pod was deployed to the node with both labels applied. 
