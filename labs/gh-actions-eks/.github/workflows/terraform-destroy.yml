@@ -9,7 +9,7 @@ permissions:
 
 env:
   TERRAFORM_DIR: './labs/gh-actions-eks/main'
-  AWS_REGION: 'us-west-2'
+  AWS_REGION: 'us-west-1'
 
 jobs:
   terraform-destroy-plan:

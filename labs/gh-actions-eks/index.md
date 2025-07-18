@@ -26,19 +26,19 @@ By the end of this lab, you'll have a production-ready CI/CD pipeline that can a
 
 ## Part 1: Initial Setup and Configuration
 
-### Fork the Repository
+### Create a New Repository
 
-- Go to your course repository page
-- Click the "Fork" button in the top right
-- Select your personal account as the destination
-
-### Create a New Repository (Alternative)
-
-If you prefer to create your own repository:
-
-1. Create a new repository named `github-actions-eks-lab`
-2. Initialize it with a README
-3. Clone the repository locally
+1. **Go to GitHub.com** and sign in to your account
+2. **Click the "+" icon** in the top right corner
+3. **Select "New repository"**
+4. **Configure your repository**:
+   - Repository name: `e2e-automation`
+   - Description: `End-to-End Automation Lab with GitHub Actions and EKS`
+   - Make it **Public** (for easier collaboration)
+   - ✅ Check "Add a README file"
+   - ✅ Check "Add .gitignore" and select "Terraform"
+   - Leave "Choose a license" as "None"
+5. **Click "Create repository"**
 
 ---
 
@@ -87,7 +87,7 @@ Terraform state files contain sensitive information and should be stored securel
 2. Navigate to S3 service
 3. Click "Create bucket"
 4. Create a globally unique bucket name (e.g., `terraform-state-eks-lab-YOUR-USERNAME-123`)
-5. Region: `us-west-2`
+5. Region: `us-west-1`
 6. Enable versioning for state file history
 7. Enable default encryption
 8. Block all public access
@@ -99,53 +99,805 @@ Terraform state files contain sensitive information and should be stored securel
 
 ## Part 4: Repository Configuration
 
-### Clone and Create Feature Branch
+### Clone Repository Using VS Code
 
-1. Clone your repository:
-   ```bash
-   git clone https://github.com/YOUR-USERNAME/REPO-NAME.git
-   cd REPO-NAME
-   ```
+1. **Open Visual Studio Code**
+2. **Clone Repository using VS Code GUI**:
+   - Press `Ctrl+Shift+P` (or `Cmd+Shift+P` on Mac) to open Command Palette
+   - Type `Git: Clone` and select it
+   - Enter your repository URL: `https://github.com/YOUR-USERNAME/e2e-automation.git`
+   - Choose a local folder to clone into
+   - Click "Open" when VS Code asks to open the cloned repository
 
-2. Create the lab directory structure:
-   ```bash
-   mkdir -p labs/gh-actions-eks/main
-   mkdir -p .github/workflows
-   ```
+### Create Lab Directory Structure
 
-3. Create a feature branch:
-   ```bash
-   git checkout -b feature/eks-deployment
-   ```
+1. **Create Directories using VS Code Explorer**:
+   - In the Explorer panel (left sidebar), right-click in the empty space
+   - Select "New Folder" and create: `labs`
+   - Right-click on `labs` folder → "New Folder" → `gh-actions-eks`
+   - Right-click on `gh-actions-eks` folder → "New Folder" → `main`
+   - Right-click in the root directory → "New Folder" → `.github`
+   - Right-click on `.github` folder → "New Folder" → `workflows`
 
-### Copy Lab Files
+### Create Feature Branch using VS Code
 
-Copy the Terraform configuration files and GitHub Actions workflows to your repository:
+1. **Create Branch using VS Code GUI**:
+   - Look at the bottom-left status bar for the current branch name (likely "main")
+   - Click on the branch name in the status bar
+   - Select "Create new branch..."
+   - Enter branch name: `feature/eks-deployment`
+   - Press Enter to create and switch to the new branch
 
-1. Copy the `main/` directory contents to `labs/gh-actions-eks/main/`
-2. Copy the `.github/workflows/` directory contents to `.github/workflows/`
+### Create Terraform Configuration Files
 
-### Update Backend Configuration
+#### 1. Create backend.tf
 
-1. Edit `labs/gh-actions-eks/main/backend.tf`
-2. Update the bucket name to match your created bucket:
+1. **Create backend.tf**:
+   - Right-click on `labs/gh-actions-eks/main/` folder → "New File"
+   - Name it: `backend.tf`
+   - Copy and paste the following content:
    ```hcl
    terraform {
      backend "s3" {
        bucket = "your-actual-bucket-name-here"
        key    = "eks/terraform.tfstate"
-       region = "us-west-2"
+       region = "us-west-1"
+     }
+
+     required_providers {
+       aws = {
+         source  = "hashicorp/aws"
+         version = "~> 5.0"
+       }
      }
    }
    ```
+   - **Important**: Replace `your-actual-bucket-name-here` with your S3 bucket name
+   - Save the file (`Ctrl+S` or `Cmd+S`)
 
-### Commit Initial Configuration
+#### 2. Create providers.tf
 
-```bash
-git add .
-git commit -m "Initial EKS lab configuration with Terraform and GitHub Actions"
-git push -u origin feature/eks-deployment
-```
+1. **Create providers.tf**:
+   - Right-click on `labs/gh-actions-eks/main/` folder → "New File"
+   - Name it: `providers.tf`
+   - Copy and paste the following content:
+   ```hcl
+   provider "aws" {
+     region = var.aws_region
+   }
+   ```
+   - Save the file (`Ctrl+S` or `Cmd+S`)
+
+#### 3. Create variables.tf
+
+1. **Create variables.tf**:
+   - Right-click on `labs/gh-actions-eks/main/` folder → "New File"
+   - Name it: `variables.tf`
+   - Copy and paste the following content:
+   ```hcl
+   variable "aws_region" {
+     description = "AWS region"
+     type        = string
+     default     = "us-west-1"
+   }
+
+   variable "cluster_name" {
+     description = "Name of the EKS cluster"
+     type        = string
+     default     = "github-actions-eks"
+   }
+
+   variable "kubernetes_version" {
+     description = "Kubernetes version"
+     type        = string
+     default     = "1.28"
+   }
+
+   variable "node_instance_type" {
+     description = "EC2 instance type for worker nodes"
+     type        = string
+     default     = "t3.medium"
+   }
+
+   variable "node_group_desired_size" {
+     description = "Desired number of worker nodes"
+     type        = number
+     default     = 2
+   }
+
+   variable "node_group_max_size" {
+     description = "Maximum number of worker nodes"
+     type        = number
+     default     = 4
+   }
+
+   variable "node_group_min_size" {
+     description = "Minimum number of worker nodes"
+     type        = number
+     default     = 1
+   }
+
+   variable "project_tags" {
+     description = "Tags for the project"
+     type        = map(string)
+     default = {
+       Project     = "github-actions-eks-lab"
+       Environment = "dev"
+       ManagedBy   = "terraform"
+     }
+   }
+   ```
+   - Save the file (`Ctrl+S` or `Cmd+S`)
+
+#### 3. Create network.tf
+
+1. **Create network.tf**:
+   - Right-click on `labs/gh-actions-eks/main/` folder → "New File"
+   - Name it: `network.tf`
+   - Copy and paste the following content:
+   ```hcl
+   # Get available availability zones
+   data "aws_availability_zones" "available" {
+     state = "available"
+   }
+
+   # VPC
+   resource "aws_vpc" "main" {
+     cidr_block           = "10.0.0.0/16"
+     enable_dns_hostnames = true
+     enable_dns_support   = true
+
+     tags = merge(var.project_tags, {
+       Name = "${var.cluster_name}-vpc"
+       "kubernetes.io/cluster/${var.cluster_name}" = "shared"
+     })
+   }
+
+   # Public Subnets
+   resource "aws_subnet" "public_1" {
+     vpc_id                  = aws_vpc.main.id
+     cidr_block              = "10.0.1.0/24"
+     availability_zone       = data.aws_availability_zones.available.names[0]
+     map_public_ip_on_launch = true
+
+     tags = merge(var.project_tags, {
+       Name = "${var.cluster_name}-public-1"
+       "kubernetes.io/cluster/${var.cluster_name}" = "shared"
+       "kubernetes.io/role/elb" = "1"
+     })
+   }
+
+   resource "aws_subnet" "public_2" {
+     vpc_id                  = aws_vpc.main.id
+     cidr_block              = "10.0.2.0/24"
+     availability_zone       = data.aws_availability_zones.available.names[1]
+     map_public_ip_on_launch = true
+
+     tags = merge(var.project_tags, {
+       Name = "${var.cluster_name}-public-2"
+       "kubernetes.io/cluster/${var.cluster_name}" = "shared"
+       "kubernetes.io/role/elb" = "1"
+     })
+   }
+
+   # Private Subnets
+   resource "aws_subnet" "private_1" {
+     vpc_id            = aws_vpc.main.id
+     cidr_block        = "10.0.3.0/24"
+     availability_zone = data.aws_availability_zones.available.names[0]
+
+     tags = merge(var.project_tags, {
+       Name = "${var.cluster_name}-private-1"
+       "kubernetes.io/cluster/${var.cluster_name}" = "owned"
+       "kubernetes.io/role/internal-elb" = "1"
+     })
+   }
+
+   resource "aws_subnet" "private_2" {
+     vpc_id            = aws_vpc.main.id
+     cidr_block        = "10.0.4.0/24"
+     availability_zone = data.aws_availability_zones.available.names[1]
+
+     tags = merge(var.project_tags, {
+       Name = "${var.cluster_name}-private-2"
+       "kubernetes.io/cluster/${var.cluster_name}" = "owned"
+       "kubernetes.io/role/internal-elb" = "1"
+     })
+   }
+
+   # Internet Gateway
+   resource "aws_internet_gateway" "main" {
+     vpc_id = aws_vpc.main.id
+
+     tags = merge(var.project_tags, {
+       Name = "${var.cluster_name}-igw"
+     })
+   }
+
+   # Elastic IPs for NAT Gateways
+   resource "aws_eip" "nat_1" {
+     domain = "vpc"
+     depends_on = [aws_internet_gateway.main]
+
+     tags = merge(var.project_tags, {
+       Name = "${var.cluster_name}-nat-1"
+     })
+   }
+
+   resource "aws_eip" "nat_2" {
+     domain = "vpc"
+     depends_on = [aws_internet_gateway.main]
+
+     tags = merge(var.project_tags, {
+       Name = "${var.cluster_name}-nat-2"
+     })
+   }
+
+   # NAT Gateways
+   resource "aws_nat_gateway" "nat_1" {
+     allocation_id = aws_eip.nat_1.id
+     subnet_id     = aws_subnet.public_1.id
+
+     tags = merge(var.project_tags, {
+       Name = "${var.cluster_name}-nat-1"
+     })
+   }
+
+   resource "aws_nat_gateway" "nat_2" {
+     allocation_id = aws_eip.nat_2.id
+     subnet_id     = aws_subnet.public_2.id
+
+     tags = merge(var.project_tags, {
+       Name = "${var.cluster_name}-nat-2"
+     })
+   }
+
+   # Public Route Table
+   resource "aws_route_table" "public" {
+     vpc_id = aws_vpc.main.id
+
+     route {
+       cidr_block = "0.0.0.0/0"
+       gateway_id = aws_internet_gateway.main.id
+     }
+
+     tags = merge(var.project_tags, {
+       Name = "${var.cluster_name}-public-rt"
+     })
+   }
+
+   # Private Route Tables
+   resource "aws_route_table" "private_1" {
+     vpc_id = aws_vpc.main.id
+
+     route {
+       cidr_block     = "0.0.0.0/0"
+       nat_gateway_id = aws_nat_gateway.nat_1.id
+     }
+
+     tags = merge(var.project_tags, {
+       Name = "${var.cluster_name}-private-rt-1"
+     })
+   }
+
+   resource "aws_route_table" "private_2" {
+     vpc_id = aws_vpc.main.id
+
+     route {
+       cidr_block     = "0.0.0.0/0"
+       nat_gateway_id = aws_nat_gateway.nat_2.id
+     }
+
+     tags = merge(var.project_tags, {
+       Name = "${var.cluster_name}-private-rt-2"
+     })
+   }
+
+   # Route Table Associations
+   resource "aws_route_table_association" "public_1" {
+     subnet_id      = aws_subnet.public_1.id
+     route_table_id = aws_route_table.public.id
+   }
+
+   resource "aws_route_table_association" "public_2" {
+     subnet_id      = aws_subnet.public_2.id
+     route_table_id = aws_route_table.public.id
+   }
+
+   resource "aws_route_table_association" "private_1" {
+     subnet_id      = aws_subnet.private_1.id
+     route_table_id = aws_route_table.private_1.id
+   }
+
+   resource "aws_route_table_association" "private_2" {
+     subnet_id      = aws_subnet.private_2.id
+     route_table_id = aws_route_table.private_2.id
+   }
+   ```
+   - Save the file (`Ctrl+S` or `Cmd+S`)
+
+#### 4. Create iam.tf
+
+1. **Create iam.tf**:
+   - Right-click on `labs/gh-actions-eks/main/` folder → "New File"
+   - Name it: `iam.tf`
+   - Copy and paste the following content:
+   ```hcl
+   # EKS Cluster Service Role
+   resource "aws_iam_role" "eks_cluster" {
+     name = "${var.cluster_name}-cluster-role"
+
+     assume_role_policy = jsonencode({
+       Version = "2012-10-17"
+       Statement = [
+         {
+           Action = "sts:AssumeRole"
+           Effect = "Allow"
+           Principal = {
+             Service = "eks.amazonaws.com"
+           }
+         }
+       ]
+     })
+
+     tags = var.project_tags
+   }
+
+   resource "aws_iam_role_policy_attachment" "eks_cluster_policy" {
+     policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
+     role       = aws_iam_role.eks_cluster.name
+   }
+
+   # EKS Node Group Service Role
+   resource "aws_iam_role" "eks_node_group" {
+     name = "${var.cluster_name}-node-group-role"
+
+     assume_role_policy = jsonencode({
+       Version = "2012-10-17"
+       Statement = [
+         {
+           Action = "sts:AssumeRole"
+           Effect = "Allow"
+           Principal = {
+             Service = "ec2.amazonaws.com"
+           }
+         }
+       ]
+     })
+
+     tags = var.project_tags
+   }
+
+   resource "aws_iam_role_policy_attachment" "eks_worker_node_policy" {
+     policy_arn = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
+     role       = aws_iam_role.eks_node_group.name
+   }
+
+   resource "aws_iam_role_policy_attachment" "eks_cni_policy" {
+     policy_arn = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
+     role       = aws_iam_role.eks_node_group.name
+   }
+
+   resource "aws_iam_role_policy_attachment" "eks_container_registry_policy" {
+     policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
+     role       = aws_iam_role.eks_node_group.name
+   }
+   ```
+   - Save the file (`Ctrl+S` or `Cmd+S`)
+
+#### 5. Create eks.tf
+
+1. **Create eks.tf**:
+   - Right-click on `labs/gh-actions-eks/main/` folder → "New File"
+   - Name it: `eks.tf`
+   - Copy and paste the following content:
+   ```hcl
+   # EKS Cluster
+   resource "aws_eks_cluster" "main" {
+     name     = var.cluster_name
+     role_arn = aws_iam_role.eks_cluster.arn
+     version  = var.kubernetes_version
+
+     vpc_config {
+       subnet_ids              = [aws_subnet.private_1.id, aws_subnet.private_2.id, aws_subnet.public_1.id, aws_subnet.public_2.id]
+       endpoint_private_access = true
+       endpoint_public_access  = true
+       public_access_cidrs     = ["0.0.0.0/0"]
+     }
+
+     enabled_cluster_log_types = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
+
+     depends_on = [
+       aws_iam_role_policy_attachment.eks_cluster_policy,
+       aws_cloudwatch_log_group.eks_cluster,
+     ]
+
+     tags = merge(var.project_tags, {
+       Name = var.cluster_name
+     })
+   }
+
+   # EKS Node Group
+   resource "aws_eks_node_group" "main" {
+     cluster_name    = aws_eks_cluster.main.name
+     node_group_name = "${var.cluster_name}-workers"
+     node_role_arn   = aws_iam_role.eks_node_group.arn
+     subnet_ids      = [aws_subnet.private_1.id, aws_subnet.private_2.id]
+
+     capacity_type  = "ON_DEMAND"
+     instance_types = [var.node_instance_type]
+
+     scaling_config {
+       desired_size = var.node_group_desired_size
+       max_size     = var.node_group_max_size
+       min_size     = var.node_group_min_size
+     }
+
+     update_config {
+       max_unavailable = 1
+     }
+
+     depends_on = [
+       aws_iam_role_policy_attachment.eks_worker_node_policy,
+       aws_iam_role_policy_attachment.eks_cni_policy,
+       aws_iam_role_policy_attachment.eks_container_registry_policy,
+     ]
+
+     tags = merge(var.project_tags, {
+       Name = "${var.cluster_name}-workers"
+     })
+   }
+
+   # CloudWatch Log Group for EKS
+   resource "aws_cloudwatch_log_group" "eks_cluster" {
+     name              = "/aws/eks/${var.cluster_name}/cluster"
+     retention_in_days = 7
+
+     tags = var.project_tags
+   }
+
+   # EKS Add-ons
+   resource "aws_eks_addon" "vpc_cni" {
+     cluster_name = aws_eks_cluster.main.name
+     addon_name   = "vpc-cni"
+     depends_on   = [aws_eks_node_group.main]
+   }
+
+   resource "aws_eks_addon" "coredns" {
+     cluster_name = aws_eks_cluster.main.name
+     addon_name   = "coredns"
+     depends_on   = [aws_eks_node_group.main]
+   }
+
+   resource "aws_eks_addon" "kube_proxy" {
+     cluster_name = aws_eks_cluster.main.name
+     addon_name   = "kube-proxy"
+     depends_on   = [aws_eks_node_group.main]
+   }
+   ```
+   - Save the file (`Ctrl+S` or `Cmd+S`)
+
+#### 6. Create outputs.tf
+
+1. **Create outputs.tf**:
+   - Right-click on `labs/gh-actions-eks/main/` folder → "New File"
+   - Name it: `outputs.tf`
+   - Copy and paste the following content:
+   ```hcl
+   # EKS Cluster Outputs
+   output "cluster_id" {
+     description = "EKS cluster ID"
+     value       = aws_eks_cluster.main.id
+   }
+
+   output "cluster_arn" {
+     description = "EKS cluster ARN"
+     value       = aws_eks_cluster.main.arn
+   }
+
+   output "cluster_endpoint" {
+     description = "EKS cluster endpoint"
+     value       = aws_eks_cluster.main.endpoint
+   }
+
+   output "cluster_security_group_id" {
+     description = "Security group ID attached to the EKS cluster"
+     value       = aws_eks_cluster.main.vpc_config[0].cluster_security_group_id
+   }
+
+   output "cluster_version" {
+     description = "EKS cluster version"
+     value       = aws_eks_cluster.main.version
+   }
+
+   output "cluster_platform_version" {
+     description = "EKS cluster platform version"
+     value       = aws_eks_cluster.main.platform_version
+   }
+
+   output "cluster_status" {
+     description = "EKS cluster status"
+     value       = aws_eks_cluster.main.status
+   }
+
+   output "node_group_arn" {
+     description = "EKS node group ARN"
+     value       = aws_eks_node_group.main.arn
+   }
+
+   output "node_group_status" {
+     description = "EKS node group status"
+     value       = aws_eks_node_group.main.status
+   }
+
+   output "vpc_id" {
+     description = "VPC ID"
+     value       = aws_vpc.main.id
+   }
+
+   output "vpc_cidr_block" {
+     description = "VPC CIDR block"
+     value       = aws_vpc.main.cidr_block
+   }
+
+   output "private_subnet_ids" {
+     description = "Private subnet IDs"
+     value       = [aws_subnet.private_1.id, aws_subnet.private_2.id]
+   }
+
+   output "public_subnet_ids" {
+     description = "Public subnet IDs"
+     value       = [aws_subnet.public_1.id, aws_subnet.public_2.id]
+   }
+
+   output "kubeconfig_command" {
+     description = "Command to configure kubectl"
+     value       = "aws eks update-kubeconfig --region ${var.aws_region} --name ${var.cluster_name}"
+   }
+   ```
+   - Save the file (`Ctrl+S` or `Cmd+S`)
+
+### Create GitHub Actions Workflows
+
+#### 1. Create terraform-plan-apply.yml
+
+1. **Create terraform-plan-apply.yml**:
+   - Right-click on `.github/workflows/` folder → "New File"
+   - Name it: `terraform-plan-apply.yml`
+   - Copy and paste the following content:
+   ```yaml
+   name: 'Terraform EKS Pipeline'
+
+   on:
+     push:
+       branches: [ "feature/**" ]
+     workflow_dispatch:
+
+   permissions:
+     contents: read
+     pull-requests: write
+
+   env:
+     TERRAFORM_DIR: './labs/gh-actions-eks/main'
+     AWS_REGION: 'us-west-1'
+
+   jobs:
+     terraform-plan:
+       name: 'Terraform Plan'
+       runs-on: ubuntu-latest
+       outputs:
+         tfplanExitCode: ${{ steps.tf-plan.outputs.exitcode }}
+
+       steps:
+       - uses: actions/checkout@v4
+
+       - name: Configure AWS Credentials
+         uses: aws-actions/configure-aws-credentials@v4
+         with:
+           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+           aws-region: '${{ env.AWS_REGION }}'
+
+       - name: Setup Terraform
+         uses: hashicorp/setup-terraform@v3
+         with:
+           terraform_version: "1.8.0"
+
+       - name: Terraform Init
+         run: |
+           terraform init
+         working-directory: ${{ env.TERRAFORM_DIR }}
+
+       - name: Terraform Plan
+         id: tf-plan
+         run: |
+           exit_code=0
+           terraform plan -detailed-exitcode -no-color -out=tfplan || exit_code=$?
+           echo "exitcode=${exit_code}" >> $GITHUB_OUTPUT
+           if [ $exit_code -eq 1 ]; then
+             echo "Terraform Plan Failed!"
+             exit 1
+           fi
+         working-directory: ${{ env.TERRAFORM_DIR }}
+
+       - name: Upload Terraform Plan
+         uses: actions/upload-artifact@v4
+         with:
+           name: tfplan
+           path: ${{ env.TERRAFORM_DIR }}/tfplan
+           retention-days: 1
+
+     approval:
+       name: 'Approve Terraform Plan'
+       needs: terraform-plan
+       runs-on: ubuntu-latest
+       environment: gh-actions-lab
+       steps:
+         - run: echo "Waiting for approval..."
+
+     terraform-apply:
+       name: 'Terraform Apply'
+       needs: [terraform-plan, approval]
+       runs-on: ubuntu-latest
+       
+       steps:
+       - uses: actions/checkout@v4
+
+       - name: Configure AWS Credentials
+         uses: aws-actions/configure-aws-credentials@v4
+         with:
+           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+           aws-region: '${{ env.AWS_REGION }}'
+
+       - name: Setup Terraform
+         uses: hashicorp/setup-terraform@v3
+         with:
+           terraform_version: "1.8.0"
+
+       - name: Terraform Init
+         run: terraform init
+         working-directory: ${{ env.TERRAFORM_DIR }}
+
+       - name: Download Terraform Plan
+         uses: actions/download-artifact@v4
+         with:
+           name: tfplan
+           path: ${{ env.TERRAFORM_DIR }}
+
+       - name: Terraform Apply
+         run: terraform apply -auto-approve tfplan
+         working-directory: ${{ env.TERRAFORM_DIR }}
+
+       - name: Update kubeconfig
+         run: |
+           aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name github-actions-eks
+           kubectl get nodes
+         working-directory: ${{ env.TERRAFORM_DIR }}
+   ```
+   - Save the file (`Ctrl+S` or `Cmd+S`)
+
+#### 2. Create terraform-destroy.yml
+
+1. **Create terraform-destroy.yml**:
+   - Right-click on `.github/workflows/` folder → "New File"
+   - Name it: `terraform-destroy.yml`
+   - Copy and paste the following content:
+   ```yaml
+   name: 'Terraform EKS Destroy'
+
+   on:
+     workflow_dispatch:
+
+   permissions:
+     contents: read
+     pull-requests: write
+
+   env:
+     TERRAFORM_DIR: './labs/gh-actions-eks/main'
+     AWS_REGION: 'us-west-1'
+
+   jobs:
+     terraform-destroy-plan:
+       name: 'Terraform Destroy Plan'
+       runs-on: ubuntu-latest
+       outputs:
+         tfplanExitCode: ${{ steps.tf-plan.outputs.exitcode }}
+
+       steps:
+       - uses: actions/checkout@v4
+
+       - name: Configure AWS Credentials
+         uses: aws-actions/configure-aws-credentials@v4
+         with:
+           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+           aws-region: '${{ env.AWS_REGION }}'
+       - name: Setup Terraform
+         uses: hashicorp/setup-terraform@v3
+         with:
+           terraform_version: "1.8.0"
+
+       - name: Terraform Init
+         run: terraform init
+         working-directory: ${{ env.TERRAFORM_DIR }}
+
+       - name: Terraform Plan Destroy
+         id: tf-plan
+         run: |
+           exit_code=0
+           terraform plan -destroy -detailed-exitcode -no-color -out=tfplan || exit_code=$?
+           echo "exitcode=${exit_code}" >> $GITHUB_OUTPUT
+           if [ $exit_code -eq 1 ]; then
+             echo "Terraform Plan Failed!"
+             exit 1
+           fi
+         working-directory: ${{ env.TERRAFORM_DIR }}
+
+       - name: Upload Terraform Plan
+         uses: actions/upload-artifact@v4
+         with:
+           name: tfplan
+           path: ${{ env.TERRAFORM_DIR }}/tfplan
+           retention-days: 1
+
+     approval:
+       name: 'Approve Terraform Destroy'
+       needs: terraform-destroy-plan
+       runs-on: ubuntu-latest
+       environment: gh-actions-lab
+       steps:
+         - run: echo "Waiting for approval to destroy..."
+
+     terraform-destroy:
+       name: 'Terraform Destroy'
+       needs: [terraform-destroy-plan, approval]
+       runs-on: ubuntu-latest
+       
+       steps:
+       - uses: actions/checkout@v4
+
+       - name: Configure AWS Credentials
+         uses: aws-actions/configure-aws-credentials@v4
+         with:
+           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+           aws-region: '${{ env.AWS_REGION }}'
+
+       - name: Setup Terraform
+         uses: hashicorp/setup-terraform@v3
+         with:
+           terraform_version: "1.8.0"
+
+       - name: Terraform Init
+         run: terraform init
+         working-directory: ${{ env.TERRAFORM_DIR }}
+
+       - name: Download Terraform Plan
+         uses: actions/download-artifact@v4
+         with:
+           name: tfplan
+           path: ${{ env.TERRAFORM_DIR }}
+
+       - name: Terraform Destroy
+         run: terraform apply -auto-approve tfplan
+         working-directory: ${{ env.TERRAFORM_DIR }}
+   ```
+   - Save the file (`Ctrl+S` or `Cmd+S`)
+
+### Commit Initial Configuration using VS Code
+
+1. **Stage and Commit using VS Code GUI**:
+   - Click on the **Source Control** icon in the left sidebar (looks like a branch)
+   - You'll see all your changes listed under "Changes"
+   - Click the "+" button next to "Changes" to stage all files
+   - In the message box at the top, type: `Initial EKS lab configuration with Terraform and GitHub Actions`
+   - Click the **Commit** button (checkmark icon)
+
+2. **Push to GitHub using VS Code GUI**:
+   - After committing, you'll see a "Sync Changes" button or "Publish Branch" button
+   - Click it to push your new branch to GitHub
+   - If prompted, authenticate with GitHub
 
 ---
 
@@ -206,14 +958,21 @@ When the plan completes, you should see approximately **25-30 resources** to be 
 
 The GitHub Actions workflow automatically configures kubectl, but you can also do it locally:
 
-```bash
-aws eks update-kubeconfig --region us-west-2 --name github-actions-eks
-kubectl get nodes
-```
+1. **Open VS Code Terminal in Bash mode**:
+   - Press `Ctrl+` (backtick) or go to **Terminal → New Terminal**
+   - If not in Bash mode, click the dropdown arrow next to the terminal name and select "Git Bash"
+
+2. **Configure kubectl**:
+   ```bash
+   aws eks update-kubeconfig --region us-west-1 --name github-actions-eks
+   kubectl get nodes
+   ```
 
 You should see 2 worker nodes in the `Ready` state.
 
 ### Test Kubernetes Access
+
+In the VS Code terminal (Bash mode), run:
 
 ```bash
 # Check cluster info
@@ -234,8 +993,10 @@ kubectl get pods -n kube-system
 
 Let's demonstrate infrastructure updates by modifying the node group:
 
-1. Edit `labs/gh-actions-eks/main/variables.tf`
-2. Update the node group configuration:
+1. **Edit variables.tf using VS Code**:
+   - In the Explorer panel, navigate to `labs/gh-actions-eks/main/variables.tf`
+   - Click on the file to open it in the editor
+   - Update the node group configuration:
    ```hcl
    variable "node_group_desired_size" {
      description = "Desired number of worker nodes"
@@ -249,14 +1010,16 @@ Let's demonstrate infrastructure updates by modifying the node group:
      default     = "t3.large"  # Changed from t3.medium
    }
    ```
+   - Save the file (`Ctrl+S` or `Cmd+S`)
 
 ### Deploy the Changes
 
-```bash
-git add .
-git commit -m "Scale node group to 3 nodes with t3.large instances"
-git push
-```
+1. **Stage and Commit using VS Code GUI**:
+   - Go to the **Source Control** panel (left sidebar)
+   - Stage all changes by clicking the "+" next to "Changes"
+   - Enter commit message: `Scale node group to 3 nodes with t3.large instances`
+   - Click the **Commit** button
+   - Click **Sync Changes** to push to GitHub
 
 ### Monitor the Update
 
@@ -269,6 +1032,8 @@ git push
 4. Wait for completion
 
 ### Verify the Update
+
+In the VS Code terminal (Bash mode), run:
 
 ```bash
 kubectl get nodes
@@ -283,7 +1048,11 @@ kubectl get nodes
 
 Let's deploy a simple application to test our EKS cluster:
 
-1. Create `sample-app.yaml`:
+1. **Create sample-app.yaml using VS Code**:
+   - Right-click in the root directory in Explorer
+   - Select "New File"
+   - Name it: `sample-app.yaml`
+   - Copy and paste the following content:
    ```yaml
    apiVersion: apps/v1
    kind: Deployment
@@ -317,18 +1086,21 @@ Let's deploy a simple application to test our EKS cluster:
        targetPort: 80
      type: LoadBalancer
    ```
+   - Save the file (`Ctrl+S` or `Cmd+S`)
 
-2. Deploy the application:
+2. **Deploy the application using VS Code terminal**:
+   - Open terminal in Bash mode (`Ctrl+` backtick)
+   - Run:
    ```bash
    kubectl apply -f sample-app.yaml
    ```
 
-3. Get the LoadBalancer URL:
+3. **Get the LoadBalancer URL**:
    ```bash
    kubectl get service nginx-service
    ```
 
-4. Test the application by accessing the external IP in your browser
+4. **Test the application** by accessing the external IP in your browser
 
 ---
 
@@ -338,14 +1110,17 @@ Let's deploy a simple application to test our EKS cluster:
 
 For cost management, let's set up an automated cleanup workflow:
 
-1. Edit `.github/workflows/terraform-destroy.yml`
-2. Add a scheduled trigger:
+1. **Edit terraform-destroy.yml using VS Code**:
+   - In Explorer, navigate to `.github/workflows/terraform-destroy.yml`
+   - Click on the file to open it in the editor
+   - Add a scheduled trigger:
    ```yaml
    on:
      workflow_dispatch:
      schedule:
        - cron: '0 22 * * *'  # Run at 10 PM UTC daily
    ```
+   - Save the file (`Ctrl+S` or `Cmd+S`)
 
 ### Manual Cleanup
 

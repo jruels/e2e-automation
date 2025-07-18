@@ -2,7 +2,6 @@ name: 'Terraform EKS Pipeline'
 
 on:
   push:
-    branches: [ "feature/**" ]
   workflow_dispatch:
 
 permissions:
@@ -11,7 +10,7 @@ permissions:
 
 env:
   TERRAFORM_DIR: './labs/gh-actions-eks/main'
-  AWS_REGION: 'us-west-2'
+  AWS_REGION: 'us-west-1'
 
 jobs:
   terraform-plan:
