@@ -180,6 +180,8 @@
 
 #### Verify Cleanup Configuration
 - Create a PR from your feature branch to the main branch
+  - **NOTE: Ensure the PR is to YOUR GitHub repo, and not the forked repository.**
+
 - Wait for the destroy workflow to trigger automatically (this happens when PR is opened)
 - When prompted, carefully review the Terraform destroy plan. You should see:
   - 0 resources to add
