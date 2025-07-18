@@ -35,6 +35,6 @@ Lab 16: [Secrets](labs/secrets/index.md)
 Lab 17: [Helm](labs/helm/index.md)   
 
 ### Day 5 
-Lab 18: [GitHub Actions Terraform](labs/gh-actions/index.md)
+Lab 18: [GitHub Actions Terraform](labs/gh-actions/index.md)   
 Lab 19: [GitHub Actions EKS](labs/gh-actions-eks/index.md)   
 Lab 20: [GitOps End-to-End Pipeline](labs/gitops-e2e/index.md)   
