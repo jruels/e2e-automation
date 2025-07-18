@@ -32,11 +32,11 @@ By the end of this lab, you'll have a production-ready CI/CD pipeline that can a
 2. **Click the "+" icon** in the top right corner
 3. **Select "New repository"**
 4. **Configure your repository**:
-   - Repository name: `e2e-automation`
+   - Repository name: `gh-actions-eks`
    - Description: `End-to-End Automation Lab with GitHub Actions and EKS`
    - Make it **Public** (for easier collaboration)
-   - ✅ Check "Add a README file"
-   - ✅ Check "Add .gitignore" and select "Terraform"
+   - Check "Add a README file"
+   - Check "Add .gitignore" and select "Terraform"
    - Leave "Choose a license" as "None"
 5. **Click "Create repository"**
 
@@ -105,23 +105,13 @@ Terraform state files contain sensitive information and should be stored securel
 2. **Clone Repository using VS Code GUI**:
    - Press `Ctrl+Shift+P` (or `Cmd+Shift+P` on Mac) to open Command Palette
    - Type `Git: Clone` and select it
-   - Enter your repository URL: `https://github.com/YOUR-USERNAME/e2e-automation.git`
+   - Enter your repository URL: `https://github.com/YOUR-USERNAME/gh-actions-eks.git`
    - Choose a local folder to clone into
    - Click "Open" when VS Code asks to open the cloned repository
 
-### Create Lab Directory Structure
-
-1. **Create Directories using VS Code Explorer**:
-   - In the Explorer panel (left sidebar), right-click in the empty space
-   - Select "New Folder" and create: `labs`
-   - Right-click on `labs` folder → "New Folder" → `gh-actions-eks`
-   - Right-click on `gh-actions-eks` folder → "New Folder" → `main`
-   - Right-click in the root directory → "New Folder" → `.github`
-   - Right-click on `.github` folder → "New Folder" → `workflows`
-
 ### Create Feature Branch using VS Code
 
-1. **Create Branch using VS Code GUI**:
+1. **Create a Branch using VS Code GUI**:
    - Look at the bottom-left status bar for the current branch name (likely "main")
    - Click on the branch name in the status bar
    - Select "Create new branch..."
@@ -133,7 +123,7 @@ Terraform state files contain sensitive information and should be stored securel
 #### 1. Create backend.tf
 
 1. **Create backend.tf**:
-   - Right-click on `labs/gh-actions-eks/main/` folder → "New File"
+   - Create a new `main` folder and create the following files in it.
    - Name it: `backend.tf`
    - Copy and paste the following content:
    ```hcl
@@ -143,7 +133,7 @@ Terraform state files contain sensitive information and should be stored securel
        key    = "eks/terraform.tfstate"
        region = "us-west-1"
      }
-
+   
      required_providers {
        aws = {
          source  = "hashicorp/aws"
@@ -158,9 +148,10 @@ Terraform state files contain sensitive information and should be stored securel
 #### 2. Create providers.tf
 
 1. **Create providers.tf**:
-   - Right-click on `labs/gh-actions-eks/main/` folder → "New File"
-   - Name it: `providers.tf`
+   
+   - Create a file named `providers.tf`
    - Copy and paste the following content:
+   
    ```hcl
    provider "aws" {
      region = var.aws_region
@@ -171,52 +162,53 @@ Terraform state files contain sensitive information and should be stored securel
 #### 3. Create variables.tf
 
 1. **Create variables.tf**:
-   - Right-click on `labs/gh-actions-eks/main/` folder → "New File"
-   - Name it: `variables.tf`
+   
+   - Create a file named `variables.tf`
    - Copy and paste the following content:
+   
    ```hcl
    variable "aws_region" {
      description = "AWS region"
      type        = string
      default     = "us-west-1"
    }
-
+   
    variable "cluster_name" {
      description = "Name of the EKS cluster"
      type        = string
      default     = "github-actions-eks"
    }
-
+   
    variable "kubernetes_version" {
      description = "Kubernetes version"
      type        = string
      default     = "1.28"
    }
-
+   
    variable "node_instance_type" {
      description = "EC2 instance type for worker nodes"
      type        = string
      default     = "t3.medium"
    }
-
+   
    variable "node_group_desired_size" {
      description = "Desired number of worker nodes"
      type        = number
      default     = 2
    }
-
+   
    variable "node_group_max_size" {
      description = "Maximum number of worker nodes"
      type        = number
      default     = 4
    }
-
+   
    variable "node_group_min_size" {
      description = "Minimum number of worker nodes"
      type        = number
      default     = 1
    }
-
+   
    variable "project_tags" {
      description = "Tags for the project"
      type        = map(string)
@@ -232,183 +224,184 @@ Terraform state files contain sensitive information and should be stored securel
 #### 3. Create network.tf
 
 1. **Create network.tf**:
-   - Right-click on `labs/gh-actions-eks/main/` folder → "New File"
-   - Name it: `network.tf`
+   
+   - Create a file named `network.tf`
    - Copy and paste the following content:
+   
    ```hcl
    # Get available availability zones
    data "aws_availability_zones" "available" {
      state = "available"
    }
-
+   
    # VPC
    resource "aws_vpc" "main" {
      cidr_block           = "10.0.0.0/16"
      enable_dns_hostnames = true
      enable_dns_support   = true
-
+   
      tags = merge(var.project_tags, {
        Name = "${var.cluster_name}-vpc"
        "kubernetes.io/cluster/${var.cluster_name}" = "shared"
      })
    }
-
+   
    # Public Subnets
    resource "aws_subnet" "public_1" {
      vpc_id                  = aws_vpc.main.id
      cidr_block              = "10.0.1.0/24"
      availability_zone       = data.aws_availability_zones.available.names[0]
      map_public_ip_on_launch = true
-
+   
      tags = merge(var.project_tags, {
        Name = "${var.cluster_name}-public-1"
        "kubernetes.io/cluster/${var.cluster_name}" = "shared"
        "kubernetes.io/role/elb" = "1"
      })
    }
-
+   
    resource "aws_subnet" "public_2" {
      vpc_id                  = aws_vpc.main.id
      cidr_block              = "10.0.2.0/24"
      availability_zone       = data.aws_availability_zones.available.names[1]
      map_public_ip_on_launch = true
-
+   
      tags = merge(var.project_tags, {
        Name = "${var.cluster_name}-public-2"
        "kubernetes.io/cluster/${var.cluster_name}" = "shared"
        "kubernetes.io/role/elb" = "1"
      })
    }
-
+   
    # Private Subnets
    resource "aws_subnet" "private_1" {
      vpc_id            = aws_vpc.main.id
      cidr_block        = "10.0.3.0/24"
      availability_zone = data.aws_availability_zones.available.names[0]
-
+   
      tags = merge(var.project_tags, {
        Name = "${var.cluster_name}-private-1"
        "kubernetes.io/cluster/${var.cluster_name}" = "owned"
        "kubernetes.io/role/internal-elb" = "1"
      })
    }
-
+   
    resource "aws_subnet" "private_2" {
      vpc_id            = aws_vpc.main.id
      cidr_block        = "10.0.4.0/24"
      availability_zone = data.aws_availability_zones.available.names[1]
-
+   
      tags = merge(var.project_tags, {
        Name = "${var.cluster_name}-private-2"
        "kubernetes.io/cluster/${var.cluster_name}" = "owned"
        "kubernetes.io/role/internal-elb" = "1"
      })
    }
-
+   
    # Internet Gateway
    resource "aws_internet_gateway" "main" {
      vpc_id = aws_vpc.main.id
-
+   
      tags = merge(var.project_tags, {
        Name = "${var.cluster_name}-igw"
      })
    }
-
+   
    # Elastic IPs for NAT Gateways
    resource "aws_eip" "nat_1" {
      domain = "vpc"
      depends_on = [aws_internet_gateway.main]
-
+   
      tags = merge(var.project_tags, {
        Name = "${var.cluster_name}-nat-1"
      })
    }
-
+   
    resource "aws_eip" "nat_2" {
      domain = "vpc"
      depends_on = [aws_internet_gateway.main]
-
+   
      tags = merge(var.project_tags, {
        Name = "${var.cluster_name}-nat-2"
      })
    }
-
+   
    # NAT Gateways
    resource "aws_nat_gateway" "nat_1" {
      allocation_id = aws_eip.nat_1.id
      subnet_id     = aws_subnet.public_1.id
-
+   
      tags = merge(var.project_tags, {
        Name = "${var.cluster_name}-nat-1"
      })
    }
-
+   
    resource "aws_nat_gateway" "nat_2" {
      allocation_id = aws_eip.nat_2.id
      subnet_id     = aws_subnet.public_2.id
-
+   
      tags = merge(var.project_tags, {
        Name = "${var.cluster_name}-nat-2"
      })
    }
-
+   
    # Public Route Table
    resource "aws_route_table" "public" {
      vpc_id = aws_vpc.main.id
-
+   
      route {
        cidr_block = "0.0.0.0/0"
        gateway_id = aws_internet_gateway.main.id
      }
-
+   
      tags = merge(var.project_tags, {
        Name = "${var.cluster_name}-public-rt"
      })
    }
-
+   
    # Private Route Tables
    resource "aws_route_table" "private_1" {
      vpc_id = aws_vpc.main.id
-
+   
      route {
        cidr_block     = "0.0.0.0/0"
        nat_gateway_id = aws_nat_gateway.nat_1.id
      }
-
+   
      tags = merge(var.project_tags, {
        Name = "${var.cluster_name}-private-rt-1"
      })
    }
-
+   
    resource "aws_route_table" "private_2" {
      vpc_id = aws_vpc.main.id
-
+   
      route {
        cidr_block     = "0.0.0.0/0"
        nat_gateway_id = aws_nat_gateway.nat_2.id
      }
-
+   
      tags = merge(var.project_tags, {
        Name = "${var.cluster_name}-private-rt-2"
      })
    }
-
+   
    # Route Table Associations
    resource "aws_route_table_association" "public_1" {
      subnet_id      = aws_subnet.public_1.id
      route_table_id = aws_route_table.public.id
    }
-
+   
    resource "aws_route_table_association" "public_2" {
      subnet_id      = aws_subnet.public_2.id
      route_table_id = aws_route_table.public.id
    }
-
+   
    resource "aws_route_table_association" "private_1" {
      subnet_id      = aws_subnet.private_1.id
      route_table_id = aws_route_table.private_1.id
    }
-
+   
    resource "aws_route_table_association" "private_2" {
      subnet_id      = aws_subnet.private_2.id
      route_table_id = aws_route_table.private_2.id
@@ -419,14 +412,15 @@ Terraform state files contain sensitive information and should be stored securel
 #### 4. Create iam.tf
 
 1. **Create iam.tf**:
-   - Right-click on `labs/gh-actions-eks/main/` folder → "New File"
-   - Name it: `iam.tf`
+   
+   - Create a file named `iam.tf`
    - Copy and paste the following content:
+   
    ```hcl
    # EKS Cluster Service Role
    resource "aws_iam_role" "eks_cluster" {
      name = "${var.cluster_name}-cluster-role"
-
+   
      assume_role_policy = jsonencode({
        Version = "2012-10-17"
        Statement = [
@@ -439,19 +433,19 @@ Terraform state files contain sensitive information and should be stored securel
          }
        ]
      })
-
+   
      tags = var.project_tags
    }
-
+   
    resource "aws_iam_role_policy_attachment" "eks_cluster_policy" {
      policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
      role       = aws_iam_role.eks_cluster.name
    }
-
+   
    # EKS Node Group Service Role
    resource "aws_iam_role" "eks_node_group" {
      name = "${var.cluster_name}-node-group-role"
-
+   
      assume_role_policy = jsonencode({
        Version = "2012-10-17"
        Statement = [
@@ -464,20 +458,20 @@ Terraform state files contain sensitive information and should be stored securel
          }
        ]
      })
-
+   
      tags = var.project_tags
    }
-
+   
    resource "aws_iam_role_policy_attachment" "eks_worker_node_policy" {
      policy_arn = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
      role       = aws_iam_role.eks_node_group.name
    }
-
+   
    resource "aws_iam_role_policy_attachment" "eks_cni_policy" {
      policy_arn = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
      role       = aws_iam_role.eks_node_group.name
    }
-
+   
    resource "aws_iam_role_policy_attachment" "eks_container_registry_policy" {
      policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
      role       = aws_iam_role.eks_node_group.name
@@ -488,87 +482,88 @@ Terraform state files contain sensitive information and should be stored securel
 #### 5. Create eks.tf
 
 1. **Create eks.tf**:
-   - Right-click on `labs/gh-actions-eks/main/` folder → "New File"
-   - Name it: `eks.tf`
+   
+   - Create a file named `eks.tf`
    - Copy and paste the following content:
+   
    ```hcl
    # EKS Cluster
    resource "aws_eks_cluster" "main" {
      name     = var.cluster_name
      role_arn = aws_iam_role.eks_cluster.arn
      version  = var.kubernetes_version
-
+   
      vpc_config {
        subnet_ids              = [aws_subnet.private_1.id, aws_subnet.private_2.id, aws_subnet.public_1.id, aws_subnet.public_2.id]
        endpoint_private_access = true
        endpoint_public_access  = true
        public_access_cidrs     = ["0.0.0.0/0"]
      }
-
+   
      enabled_cluster_log_types = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
-
+   
      depends_on = [
        aws_iam_role_policy_attachment.eks_cluster_policy,
        aws_cloudwatch_log_group.eks_cluster,
      ]
-
+   
      tags = merge(var.project_tags, {
        Name = var.cluster_name
      })
    }
-
+   
    # EKS Node Group
    resource "aws_eks_node_group" "main" {
      cluster_name    = aws_eks_cluster.main.name
      node_group_name = "${var.cluster_name}-workers"
      node_role_arn   = aws_iam_role.eks_node_group.arn
      subnet_ids      = [aws_subnet.private_1.id, aws_subnet.private_2.id]
-
+   
      capacity_type  = "ON_DEMAND"
      instance_types = [var.node_instance_type]
-
+   
      scaling_config {
        desired_size = var.node_group_desired_size
        max_size     = var.node_group_max_size
        min_size     = var.node_group_min_size
      }
-
+   
      update_config {
        max_unavailable = 1
      }
-
+   
      depends_on = [
        aws_iam_role_policy_attachment.eks_worker_node_policy,
        aws_iam_role_policy_attachment.eks_cni_policy,
        aws_iam_role_policy_attachment.eks_container_registry_policy,
      ]
-
+   
      tags = merge(var.project_tags, {
        Name = "${var.cluster_name}-workers"
      })
    }
-
+   
    # CloudWatch Log Group for EKS
    resource "aws_cloudwatch_log_group" "eks_cluster" {
      name              = "/aws/eks/${var.cluster_name}/cluster"
      retention_in_days = 7
-
+   
      tags = var.project_tags
    }
-
+   
    # EKS Add-ons
    resource "aws_eks_addon" "vpc_cni" {
      cluster_name = aws_eks_cluster.main.name
      addon_name   = "vpc-cni"
      depends_on   = [aws_eks_node_group.main]
    }
-
+   
    resource "aws_eks_addon" "coredns" {
      cluster_name = aws_eks_cluster.main.name
      addon_name   = "coredns"
      depends_on   = [aws_eks_node_group.main]
    }
-
+   
    resource "aws_eks_addon" "kube_proxy" {
      cluster_name = aws_eks_cluster.main.name
      addon_name   = "kube-proxy"
@@ -580,76 +575,77 @@ Terraform state files contain sensitive information and should be stored securel
 #### 6. Create outputs.tf
 
 1. **Create outputs.tf**:
-   - Right-click on `labs/gh-actions-eks/main/` folder → "New File"
-   - Name it: `outputs.tf`
+   
+   - Create a file named `outputs.tf`
    - Copy and paste the following content:
+   
    ```hcl
    # EKS Cluster Outputs
    output "cluster_id" {
      description = "EKS cluster ID"
      value       = aws_eks_cluster.main.id
    }
-
+   
    output "cluster_arn" {
      description = "EKS cluster ARN"
      value       = aws_eks_cluster.main.arn
    }
-
+   
    output "cluster_endpoint" {
      description = "EKS cluster endpoint"
      value       = aws_eks_cluster.main.endpoint
    }
-
+   
    output "cluster_security_group_id" {
      description = "Security group ID attached to the EKS cluster"
      value       = aws_eks_cluster.main.vpc_config[0].cluster_security_group_id
    }
-
+   
    output "cluster_version" {
      description = "EKS cluster version"
      value       = aws_eks_cluster.main.version
    }
-
+   
    output "cluster_platform_version" {
      description = "EKS cluster platform version"
      value       = aws_eks_cluster.main.platform_version
    }
-
+   
    output "cluster_status" {
      description = "EKS cluster status"
      value       = aws_eks_cluster.main.status
    }
-
+   
    output "node_group_arn" {
      description = "EKS node group ARN"
      value       = aws_eks_node_group.main.arn
    }
-
+   
    output "node_group_status" {
      description = "EKS node group status"
      value       = aws_eks_node_group.main.status
    }
-
+   
    output "vpc_id" {
      description = "VPC ID"
      value       = aws_vpc.main.id
    }
-
+   
    output "vpc_cidr_block" {
      description = "VPC CIDR block"
      value       = aws_vpc.main.cidr_block
    }
-
+   
    output "private_subnet_ids" {
      description = "Private subnet IDs"
      value       = [aws_subnet.private_1.id, aws_subnet.private_2.id]
    }
-
+   
    output "public_subnet_ids" {
      description = "Public subnet IDs"
      value       = [aws_subnet.public_1.id, aws_subnet.public_2.id]
    }
-
+   
    output "kubeconfig_command" {
      description = "Command to configure kubectl"
      value       = "aws eks update-kubeconfig --region ${var.aws_region} --name ${var.cluster_name}"
@@ -662,52 +658,52 @@ Terraform state files contain sensitive information and should be stored securel
 #### 1. Create terraform-plan-apply.yml
 
 1. **Create terraform-plan-apply.yml**:
-   - Right-click on `.github/workflows/` folder → "New File"
-   - Name it: `terraform-plan-apply.yml`
+   - Create a folder in the repository root named `.github/workflows`
+   - Create a file named `terraform-plan-apply.yml`
    - Copy and paste the following content:
    ```yaml
    name: 'Terraform EKS Pipeline'
-
+   
    on:
      push:
        branches: [ "feature/**" ]
      workflow_dispatch:
-
+   
    permissions:
      contents: read
      pull-requests: write
-
+   
    env:
-     TERRAFORM_DIR: './labs/gh-actions-eks/main'
+     TERRAFORM_DIR: './main'
      AWS_REGION: 'us-west-1'
-
+   
    jobs:
      terraform-plan:
        name: 'Terraform Plan'
        runs-on: ubuntu-latest
        outputs:
          tfplanExitCode: ${{ steps.tf-plan.outputs.exitcode }}
-
+   
        steps:
        - uses: actions/checkout@v4
-
+   
        - name: Configure AWS Credentials
          uses: aws-actions/configure-aws-credentials@v4
          with:
            aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
            aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
            aws-region: '${{ env.AWS_REGION }}'
-
+   
        - name: Setup Terraform
          uses: hashicorp/setup-terraform@v3
          with:
            terraform_version: "1.8.0"
-
+   
        - name: Terraform Init
          run: |
            terraform init
          working-directory: ${{ env.TERRAFORM_DIR }}
-
+   
        - name: Terraform Plan
          id: tf-plan
          run: |
@@ -719,14 +715,14 @@ Terraform state files contain sensitive information and should be stored securel
              exit 1
            fi
          working-directory: ${{ env.TERRAFORM_DIR }}
-
+   
        - name: Upload Terraform Plan
          uses: actions/upload-artifact@v4
          with:
            name: tfplan
            path: ${{ env.TERRAFORM_DIR }}/tfplan
            retention-days: 1
-
+   
      approval:
        name: 'Approve Terraform Plan'
        needs: terraform-plan
@@ -734,7 +730,7 @@ Terraform state files contain sensitive information and should be stored securel
        environment: gh-actions-lab
        steps:
          - run: echo "Waiting for approval..."
-
+   
      terraform-apply:
        name: 'Terraform Apply'
        needs: [terraform-plan, approval]
@@ -742,33 +738,33 @@ Terraform state files contain sensitive information and should be stored securel
        
        steps:
        - uses: actions/checkout@v4
-
+   
        - name: Configure AWS Credentials
          uses: aws-actions/configure-aws-credentials@v4
          with:
            aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
            aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
            aws-region: '${{ env.AWS_REGION }}'
-
+   
        - name: Setup Terraform
          uses: hashicorp/setup-terraform@v3
          with:
            terraform_version: "1.8.0"
-
+   
        - name: Terraform Init
          run: terraform init
          working-directory: ${{ env.TERRAFORM_DIR }}
-
+   
        - name: Download Terraform Plan
          uses: actions/download-artifact@v4
          with:
            name: tfplan
            path: ${{ env.TERRAFORM_DIR }}
-
+   
        - name: Terraform Apply
          run: terraform apply -auto-approve tfplan
          working-directory: ${{ env.TERRAFORM_DIR }}
-
+   
        - name: Update kubeconfig
          run: |
            aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name github-actions-eks
@@ -780,33 +776,33 @@ Terraform state files contain sensitive information and should be stored securel
 #### 2. Create terraform-destroy.yml
 
 1. **Create terraform-destroy.yml**:
-   - Right-click on `.github/workflows/` folder → "New File"
-   - Name it: `terraform-destroy.yml`
+   - In the `.github/workflows` folder
+   - Create a file named `terraform-destroy.yml`
    - Copy and paste the following content:
    ```yaml
    name: 'Terraform EKS Destroy'
-
+   
    on:
      workflow_dispatch:
-
+   
    permissions:
      contents: read
      pull-requests: write
-
+   
    env:
-     TERRAFORM_DIR: './labs/gh-actions-eks/main'
+     TERRAFORM_DIR: './main'
      AWS_REGION: 'us-west-1'
-
+   
    jobs:
      terraform-destroy-plan:
        name: 'Terraform Destroy Plan'
        runs-on: ubuntu-latest
        outputs:
          tfplanExitCode: ${{ steps.tf-plan.outputs.exitcode }}
-
+   
        steps:
        - uses: actions/checkout@v4
-
+   
        - name: Configure AWS Credentials
          uses: aws-actions/configure-aws-credentials@v4
          with:
@@ -817,11 +813,11 @@ Terraform state files contain sensitive information and should be stored securel
          uses: hashicorp/setup-terraform@v3
          with:
            terraform_version: "1.8.0"
-
+   
        - name: Terraform Init
          run: terraform init
          working-directory: ${{ env.TERRAFORM_DIR }}
-
+   
        - name: Terraform Plan Destroy
          id: tf-plan
          run: |
@@ -833,14 +829,14 @@ Terraform state files contain sensitive information and should be stored securel
              exit 1
            fi
          working-directory: ${{ env.TERRAFORM_DIR }}
-
+   
        - name: Upload Terraform Plan
          uses: actions/upload-artifact@v4
          with:
            name: tfplan
            path: ${{ env.TERRAFORM_DIR }}/tfplan
            retention-days: 1
-
+   
      approval:
        name: 'Approve Terraform Destroy'
        needs: terraform-destroy-plan
@@ -848,7 +844,7 @@ Terraform state files contain sensitive information and should be stored securel
        environment: gh-actions-lab
        steps:
          - run: echo "Waiting for approval to destroy..."
-
+   
      terraform-destroy:
        name: 'Terraform Destroy'
        needs: [terraform-destroy-plan, approval]
@@ -856,29 +852,29 @@ Terraform state files contain sensitive information and should be stored securel
        
        steps:
        - uses: actions/checkout@v4
-
+   
        - name: Configure AWS Credentials
          uses: aws-actions/configure-aws-credentials@v4
          with:
            aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
            aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
            aws-region: '${{ env.AWS_REGION }}'
-
+   
        - name: Setup Terraform
          uses: hashicorp/setup-terraform@v3
          with:
            terraform_version: "1.8.0"
-
+   
        - name: Terraform Init
          run: terraform init
          working-directory: ${{ env.TERRAFORM_DIR }}
-
+   
        - name: Download Terraform Plan
          uses: actions/download-artifact@v4
          with:
            name: tfplan
            path: ${{ env.TERRAFORM_DIR }}
-
+   
        - name: Terraform Destroy
          run: terraform apply -auto-approve tfplan
          working-directory: ${{ env.TERRAFORM_DIR }}
@@ -949,14 +945,14 @@ When the plan completes, you should see approximately **25-30 resources** to be 
 
 ### Check Cluster Status
 
-1. Wait for the terraform apply job to complete (10-15 minutes)
+1. Wait for the terraform apply job to complete (20-25 minutes)
 2. Go to AWS Console → EKS → Clusters
 3. Verify the `github-actions-eks` cluster is active
 4. Check the node group status
 
 ### Configure kubectl Access
 
-The GitHub Actions workflow automatically configures kubectl, but you can also do it locally:
+The GitHub Actions workflow automatically configures kubectl, but if you experience any issues, you can also do it locally:
 
 1. **Open VS Code Terminal in Bash mode**:
    - Press `Ctrl+` (backtick) or go to **Terminal → New Terminal**
@@ -994,9 +990,10 @@ kubectl get pods -n kube-system
 Let's demonstrate infrastructure updates by modifying the node group:
 
 1. **Edit variables.tf using VS Code**:
-   - In the Explorer panel, navigate to `labs/gh-actions-eks/main/variables.tf`
-   - Click on the file to open it in the editor
+   
+   - Open `variables.tf` in the editor
    - Update the node group configuration:
+   
    ```hcl
    variable "node_group_desired_size" {
      description = "Desired number of worker nodes"
@@ -1136,7 +1133,6 @@ To immediately clean up resources:
 
 1. Check AWS Console - EKS cluster should be deleted
 2. Verify all associated resources are cleaned up
-3. Check AWS billing to ensure no ongoing charges
 
 ---
 
@@ -1168,15 +1164,15 @@ For production use, consider these enhancements:
 
 ## Completion
 
-🎉 **Congratulations!** You've successfully completed the GitHub Actions EKS CI/CD Pipeline lab!
+**Congratulations!** You've successfully completed the GitHub Actions EKS CI/CD Pipeline lab!
 
 ### What You've Accomplished
 
-✅ **Infrastructure as Code**: Deployed a production-ready EKS cluster using Terraform
-✅ **CI/CD Pipeline**: Created automated deployment workflows with GitHub Actions
-✅ **Security**: Implemented approval workflows and secret management
-✅ **Scalability**: Demonstrated cluster scaling and updates
-✅ **Real-world Skills**: Learned industry-standard DevOps practices
+**Infrastructure as Code**: Deployed a production-ready EKS cluster using Terraform
+**CI/CD Pipeline**: Created automated deployment workflows with GitHub Actions
+**Security**: Implemented approval workflows and secret management
+**Scalability**: Demonstrated cluster scaling and updates
+**Real-world Skills**: Learned industry-standard DevOps practices
 
 ### Key Takeaways
 
@@ -1185,16 +1181,6 @@ For production use, consider these enhancements:
 3. **Cost Management**: Implement cleanup workflows to prevent surprise bills
 4. **Monitoring**: Real-world deployments need observability and monitoring
 5. **Scalability**: Cloud-native infrastructure should be designed for growth
-
-### Next Steps
-
-- Explore Kubernetes operators and custom resources
-- Implement GitOps workflows with ArgoCD or Flux
-- Add automated testing and security scanning to your pipeline
-- Learn about service mesh technologies like Istio
-- Explore serverless containers with AWS Fargate
-
----
 
 ## Troubleshooting Guide
 
@@ -1226,13 +1212,3 @@ For production use, consider these enhancements:
 
 ---
 
-## Additional Resources
-
-- [AWS EKS Best Practices](https://aws.github.io/aws-eks-best-practices/)
-- [Terraform AWS Provider Documentation](https://registry.terraform.io/providers/hashicorp/aws/latest/docs)
-- [GitHub Actions Documentation](https://docs.github.com/en/actions)
-- [Kubernetes Documentation](https://kubernetes.io/docs/)
-
----
-
-*This lab provides hands-on experience with enterprise-grade DevOps practices. The skills learned here are directly applicable to real-world cloud infrastructure management.*
