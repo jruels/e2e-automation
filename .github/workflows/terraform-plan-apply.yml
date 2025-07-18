@@ -1,5 +1,6 @@
 name: 'Terraform AWS Pipeline'
 
+
 on:
   push:
    branches: [ "feature/**" ]
@@ -10,8 +11,9 @@ permissions:
   pull-requests: write
 
 env:
-  TERRAFORM_DIR: './labs/gh-actions/main'
+  TERRAFORM_DIR: './main'
   AWS_REGION: 'us-west-1'
+  TF_VAR_instance_type: 't2.small'
 
 jobs:
   terraform-plan:
