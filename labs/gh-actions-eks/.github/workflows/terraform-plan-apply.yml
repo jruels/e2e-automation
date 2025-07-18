@@ -1,0 +1,108 @@
+name: 'Terraform EKS Pipeline'
+
+on:
+  push:
+    branches: [ "feature/**" ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+env:
+  TERRAFORM_DIR: './labs/gh-actions-eks/main'
+  AWS_REGION: 'us-west-2'
+
+jobs:
+  terraform-plan:
+    name: 'Terraform Plan'
+    runs-on: ubuntu-latest
+    outputs:
+      tfplanExitCode: ${{ steps.tf-plan.outputs.exitcode }}
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: '${{ env.AWS_REGION }}'
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: "1.8.0"
+
+    - name: Terraform Init
+      run: |
+        terraform init
+      working-directory: ${{ env.TERRAFORM_DIR }}
+
+    - name: Terraform Plan
+      id: tf-plan
+      run: |
+        exit_code=0
+        terraform plan -detailed-exitcode -no-color -out=tfplan || exit_code=$?
+        echo "exitcode=${exit_code}" >> $GITHUB_OUTPUT
+        if [ $exit_code -eq 1 ]; then
+          echo "Terraform Plan Failed!"
+          exit 1
+        fi
+      working-directory: ${{ env.TERRAFORM_DIR }}
+
+    - name: Upload Terraform Plan
+      uses: actions/upload-artifact@v4
+      with:
+        name: tfplan
+        path: ${{ env.TERRAFORM_DIR }}/tfplan
+        retention-days: 1
+
+  approval:
+    name: 'Approve Terraform Plan'
+    needs: terraform-plan
+    runs-on: ubuntu-latest
+    environment: gh-actions-lab
+    steps:
+      - run: echo "Waiting for approval..."
+
+  terraform-apply:
+    name: 'Terraform Apply'
+    needs: [terraform-plan, approval]
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: '${{ env.AWS_REGION }}'
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: "1.8.0"
+
+    - name: Terraform Init
+      run: terraform init
+      working-directory: ${{ env.TERRAFORM_DIR }}
+
+    - name: Download Terraform Plan
+      uses: actions/download-artifact@v4
+      with:
+        name: tfplan
+        path: ${{ env.TERRAFORM_DIR }}
+
+    - name: Terraform Apply
+      run: terraform apply -auto-approve tfplan
+      working-directory: ${{ env.TERRAFORM_DIR }}
+
+    - name: Update kubeconfig
+      run: |
+        aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name github-actions-eks
+        kubectl get nodes
+      working-directory: ${{ env.TERRAFORM_DIR }}
