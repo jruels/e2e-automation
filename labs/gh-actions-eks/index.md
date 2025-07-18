@@ -131,7 +131,7 @@ Terraform state files contain sensitive information and should be stored securel
      backend "s3" {
        bucket = "your-actual-bucket-name-here"
        key    = "eks/terraform.tfstate"
-       region = var.aws_region
+       region = "us-west-1"
      }
    
      required_providers {
@@ -1027,6 +1027,8 @@ Let's demonstrate infrastructure updates by modifying the node group:
    - New instance type: t3.large
 3. Approve the changes
 4. Wait for completion
+   1. This can take up to 20 minutes.
+
 
 ### Verify the Update
 
@@ -1103,36 +1105,39 @@ Let's deploy a simple application to test our EKS cluster:
 
 ## Part 9: Cleanup Workflow
 
-### Configure Automatic Cleanup
+1. #### Add PR Merge Trigger for Destroy
 
-For cost management, let's set up an automated cleanup workflow:
+   - Open `.github/workflows/terraform-destroy.yml`
 
-1. **Edit terraform-destroy.yml using VS Code**:
-   - In Explorer, navigate to `.github/workflows/terraform-destroy.yml`
-   - Click on the file to open it in the editor
-   - Add a scheduled trigger:
-   ```yaml
-   on:
-     workflow_dispatch:
-     schedule:
-       - cron: '0 22 * * *'  # Run at 10 PM UTC daily
-   ```
-   - Save the file (`Ctrl+S` or `Cmd+S`)
+   - Add pull request trigger to the `on` section:
 
-### Manual Cleanup
+     ```yaml
+     on:
+       workflow_dispatch:
+       pull_request:
+         types: [opened]
+         branches: [main]
+     ```
 
-To immediately clean up resources:
+   - Commit and push your changes:
 
-1. Go to Actions tab
-2. Select "Terraform EKS Destroy" workflow
-3. Click "Run workflow"
-4. Review the destroy plan (should show ~25-30 resources to destroy)
-5. Approve the destruction
+     ```bash
+     git add .
+     git commit -m "Add PR merge trigger to destroy workflow"
+     git push
+     ```
 
-### Verify Cleanup
+   #### Verify Cleanup Configuration
 
-1. Check AWS Console - EKS cluster should be deleted
-2. Verify all associated resources are cleaned up
+   - Create a PR from your feature branch to the main branch
+     - **NOTE: Ensure the PR is to YOUR GitHub repo, and not the forked repository.**
+
+   - Wait for the destroy workflow to trigger automatically (this happens when PR is opened)
+   - When prompted, carefully review the Terraform destroy plan. 
+   - Review and approve the destroy plan 
+   - Verify all resources are successfully destroyed in AWS Console
+   - Once destruction is confirmed, merge the PR
+   - Verify in AWS Console that the environment remains cleaned up after merge
 
 ---
 
