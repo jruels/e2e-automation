@@ -131,7 +131,7 @@ Terraform state files contain sensitive information and should be stored securel
      backend "s3" {
        bucket = "your-actual-bucket-name-here"
        key    = "eks/terraform.tfstate"
-       region = "us-west-1"
+       region = var.aws_region
      }
    
      required_providers {
