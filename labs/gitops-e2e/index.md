@@ -30,7 +30,7 @@ Docker Hub is a cloud registry for storing and sharing container images. You'll 
 1. Go to [https://hub.docker.com](https://hub.docker.com)
 2. Log in or create a new Docker Hub account
 3. Click your profile icon → **Account Settings**
-4. Navigate to **Security** → **New Access Token**
+4. Navigate to **Settings** -> **Personal Access Token**
 5. Create a token with:
 
    * **Name**: `github-actions`
